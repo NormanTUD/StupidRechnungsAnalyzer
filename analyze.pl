@@ -9,8 +9,8 @@ use List::MoreUtils qw(firstidx);
 sub debug (@);
 
 my @valide_firmen = (
-	"WebServ it GbR",
-	"Variomedia AG",
+	"WebServ",
+	"Variomedia",
 	"Vodafone",
 	"Telekom"
 );
@@ -122,7 +122,7 @@ sub parse_rechnung ($) {
 		mwst_satz => undef
 	);
 
-	if($parser_routine eq "WebServ it GbR") {
+	if($parser_routine eq "WebServ") {
 		$rechnung{firma} = $parser_routine;
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
@@ -147,7 +147,7 @@ sub parse_rechnung ($) {
 		} else {
 			error "Konnte aus der $file keinen Gesamtbetrag ermitteln";
 		}
-	} elsif ($parser_routine eq "Variomedia AG") {
+	} elsif ($parser_routine eq "Variomedia") {
 		$rechnung{firma} = $parser_routine;
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
