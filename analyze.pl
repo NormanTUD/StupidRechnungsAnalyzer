@@ -202,7 +202,7 @@ sub parse_rechnung ($) {
 	} elsif ($parser_routine eq "Vodafone") {
 		$rechnung{firma} = $parser_routine;
 		if($string_without_newlines !~ m#^\s*Vodafone#) { # Vodafone Format 1
-
+			$rechnung{firma} = "Vodafone-Mobil";
 			if($str =~ m#den Zeitraum\s*vom\s*(\d+\.\d+.\d+)\s*bis\s*(\d+\.\d+.\d+)#) {
 				$rechnung{datum} = $2;				# Hier 1 wählen, wenn das Startdatum des Vertrages gewählt werden soll
 			} else {
@@ -228,6 +228,7 @@ sub parse_rechnung ($) {
 				error "Konnte keinen Gesamtbetrag bestimmen";
 			}
 		} else { # Vodafone Format 2
+			$rechnung{firma} = "Vodafone-Kabel";
 			if($str =~ m#MwSt\.\s*\((\d+(?:,\d+)?)%#) {
 				my $satz = $1;
 				$satz =~ s#,#.#g;
