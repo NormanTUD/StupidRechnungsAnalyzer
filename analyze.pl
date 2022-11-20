@@ -141,7 +141,7 @@ sub parse_rechnung ($) {
 	}
 
 	my %rechnung = (
-		filename => $file,
+		filename => $file =~ s#.*/##gr,
 		firma => undef,
 		datum => undef,
 		summe => undef,
