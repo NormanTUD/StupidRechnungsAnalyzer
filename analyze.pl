@@ -19,7 +19,7 @@ my @valide_firmen = (
 	"Telekom"
 );
 
-my @monate = ["januar", "februar", "m.*rz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
+my @monate = ["januar", "februar", "märz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
 
 my %config = (
 	debug => 0,
@@ -215,11 +215,15 @@ sub parse_rechnung ($) {
 					($tag, $monat_name, $jahr) = ($1, $2, $3);
 				}
 
-				if($monat_name) {
-					$monat = firstidx { $_ =~ /$monat_name/ } @monate;
-					$monat++;
+				if($monat_name =~ m#m# && $monat_name =~ m#rz#) {
+					$monat = 3;
 				} else {
-					error "Konnte aus der $file keinen Monat extrahieren";
+					if($monat_name) {
+						$monat = firstidx { $_ =~ /$monat_name/ } @monate;
+						$monat++;
+					} else {
+						error "Konnte aus der $file keinen Monat extrahieren";
+					}
 				}
 
 				$rechnung{datum} = "$tag.$monat.$jahr";
