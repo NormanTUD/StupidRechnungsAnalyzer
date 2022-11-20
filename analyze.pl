@@ -39,6 +39,16 @@ sub error ($) {
 	}
 }
 
+sub get_nr (\%$$) {
+	my $rechnung = shift;
+	my $name = shift;
+	my $val = shift;
+	$val =~ s#,#.#g;
+	$val += 0;
+	$rechnung->{$name} = sprintf "%.2f", $val;
+
+}
+
 sub debug (@) {
 	return unless $config{debug};
 
@@ -134,19 +144,13 @@ sub parse_rechnung ($) {
 		}
 
 		if($str =~ m#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#i) {
-			my $satz = $1;
-			$satz =~ s#,#.#g;
-			$satz += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{mwst_satz} = sprintf "%.2f", $satz;
+			get_nr %rechnung, "mwst_satz", $1;
 		} else {
 			error "Konnte aus der $file keinen MwSt-Satz erkennen";
 		}
 
 		if($str =~ m#Gesamtbetrag\s*(\d+(?:,\d+)?)#i) {
-			my $summe = $1;
-			$summe =~ s#,#.#g;
-			$summe += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{summe} = sprintf "%.2f", $summe;
+			get_nr %rechnung, "summe", $1;
 		} else {
 			error "Konnte aus der $file keinen Gesamtbetrag ermitteln";
 		}
@@ -159,19 +163,13 @@ sub parse_rechnung ($) {
 		}
 
 		if($str =~ m#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#i) {
-			my $satz = $1;
-			$satz =~ s#,#.#g;
-			$satz += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{mwst_satz} = sprintf "%.2f", $satz;
+			get_nr %rechnung, "mwst_satz", $1;
 		} else {
 			error "Konnte aus der $file keinen MwSt-Satz erkennen";
 		}
 
 		if($str =~ m#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#i) {
-			my $summe = $1;
-			$summe =~ s#,#.#g;
-			$summe += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{summe} = sprintf "%.2f", $summe;
+			get_nr %rechnung, "summe", $1;
 		} else {
 			error "Konnte aus der $file keinen Gesamtbetrag ermitteln";
 		}
@@ -185,19 +183,13 @@ sub parse_rechnung ($) {
 		}
 
 		if($str =~ m#Rechnungsbetrag\s+(\d+(?:,\d+)?)#) {
-			my $summe = $1;
-			$summe =~ s#,#.#g;
-			$summe += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{summe} = sprintf "%.2f", $summe;
+			get_nr %rechnung, "summe", $1;
 		} else {
 			error "Konnte keine summe finden in $file";
 		}
 
 		if($str =~ m#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#) {
-			my $satz = $1;
-			$satz =~ s#,#.#g;
-			$satz += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-			$rechnung{mwst_satz} = sprintf "%.2f", $satz;
+			get_nr %rechnung, "mwst_satz", $1;
 		} else {
 			error "Konnte keine mwst ermitteln";
 		}
@@ -213,39 +205,27 @@ sub parse_rechnung ($) {
 			}
 
 			if($str =~ m#(\d+(?:,\d+)?)\s*%#) {
-				my $satz = $1;
-				$satz =~ s#,#.#g;
-				$satz += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-				$rechnung{mwst_satz} = sprintf "%.2f", $satz;
+				get_nr %rechnung, "mwst_satz", $1;
 			} else {
 				error "Konnte aus der $file kein mwst_satz ermitteln";
 			}
 
 
 			if($string_without_newlines =~ m#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#) {
-				my $summe = $1;
-				$summe =~ s#,#.#g;
-				$summe += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-				$rechnung{summe} = sprintf "%.2f", $summe;
+				get_nr %rechnung, "summe", $1;
 			} else {
 				error "Konnte keinen Gesamtbetrag bestimmen";
 			}
 		} else { # Vodafone Format 2
 			$rechnung{firma} = "Vodafone-Kabel";
 			if($str =~ m#MwSt\.\s*\((\d+(?:,\d+)?)%#) {
-				my $satz = $1;
-				$satz =~ s#,#.#g;
-				$satz += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-				$rechnung{mwst_satz} = sprintf "%.2f", $satz;
+				get_nr %rechnung, "mwst_satz", $1;
 			} else {
 				error "Konnte aus $file keine MwSt ermitteln";
 			}
 
 			if($str =~ m#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#) {
-				my $summe = $1;
-				$summe =~ s#,#.#g;
-				$summe += 0;			# Hack um das mit Nachkommastellen zu nem float zu machen
-				$rechnung{summe} = sprintf "%.2f", $summe;
+				get_nr %rechnung, "summe", $1;
 			} else {
 				error "Konnte in $file keine summe finden";
 			}
