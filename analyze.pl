@@ -177,22 +177,11 @@ sub parse_rechnung ($) {
 		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz";
 		get_nr $str, qr#Gesamtbetrag\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Variomedia") {
-		if($str =~ m#Datum:?\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
-			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
-		} else {
-			error "Konnte aus der $file kein Datum extrahieren (B)";
-		}
-
+		$rechnung{datum} = get_simple_datum($file, $str);
 		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz";
 		get_nr $str, qr#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Telekom") {
-
-		if($str =~ m#Datum\s*(\d+\.\d+\.\d+)#) {
-			$rechnung{datum} = $1;
-		} else {
-			error "Konnte aus der $file kein Datum extrahieren (C)";
-		}
-
+		$rechnung{datum} = get_simple_datum($file, $str);
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe";
 		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz";
 	} elsif ($parser_routine eq "Vodafone") {
