@@ -239,7 +239,7 @@ sub parse_rechnung ($) {
 				}
 
 				if($monat_name) {
-					$monat = firstidx { $_ =~ /$monat_name/  } @monate;
+					$monat = firstidx { $_ =~ /$monat_name/ } @monate;
 					$monat++;
 				} else {
 					error "Monat name could not be found in $file";
