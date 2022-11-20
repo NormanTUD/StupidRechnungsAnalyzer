@@ -6,6 +6,9 @@ use autodie;
 use Data::Dumper;
 use List::MoreUtils qw(firstidx);
 use Term::ANSIColor;
+use Encode;
+use Encode::Detect::Detector;
+use utf8;
 
 sub debug (@);
 
@@ -16,7 +19,7 @@ my @valide_firmen = (
 	"Telekom"
 );
 
-my @monate = qw/januar februar märz april mai juni juli august september oktober november dezember/;
+my @monate = ["januar", "februar", "m.*rz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember"];
 
 my %config = (
 	debug => 0,
@@ -127,6 +130,11 @@ sub parse_rechnung ($) {
 
 	my $str = join("\n", @contents);
 
+	my $encoding_name = Encode::Detect::Detector::detect($str);
+	print $encoding_name; # gb18030
+
+	$str = decode($encoding_name, $str);
+
 	my $parser_routine = undef;
 	my $re = "((?:".join(")|(?:", @valide_firmen)."))";
 	if($str =~ /$re/) {
@@ -155,7 +163,7 @@ sub parse_rechnung ($) {
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
 		} else {
-			error "Konnte aus der $file kein Datum extrahieren";
+			error "Konnte aus der $file kein Datum extrahieren (A)";
 		}
 
 		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
@@ -165,7 +173,7 @@ sub parse_rechnung ($) {
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
 		} else {
-			error "Konnte aus der $file kein Datum extrahieren";
+			error "Konnte aus der $file kein Datum extrahieren (B)";
 		}
 
 		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz", $1;
@@ -176,7 +184,7 @@ sub parse_rechnung ($) {
 		if($str =~ m#Datum\s*(\d+\.\d+\.\d+)#) {
 			$rechnung{datum} = $1;
 		} else {
-			error "Konnte aus der $file kein Datum extrahieren";
+			error "Konnte aus der $file kein Datum extrahieren (C)";
 		}
 
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
@@ -187,7 +195,7 @@ sub parse_rechnung ($) {
 			if($str =~ m#den Zeitraum\s*vom\s*(\d+\.\d+.\d+)\s*bis\s*(\d+\.\d+.\d+)#) {
 				$rechnung{datum} = $2;				# Hier 1 wählen, wenn das Startdatum des Vertrages gewählt werden soll
 			} else {
-				error "Konnte aus der $file kein Datum extrahieren";
+				error "Konnte aus der $file kein Datum extrahieren (D)";
 			}
 
 			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
@@ -198,7 +206,10 @@ sub parse_rechnung ($) {
 			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
+		
+			use re 'debug';
 			my $datum_re = qr#Datum:?\s*(\d+\.\s*\w+\s*\d+)#;
+
 			if($str =~ m#$datum_re#i) {
 				my $res = lc $1;
 				my ($tag, $monat, $monat_name, $jahr) = (undef, undef, undef, undef);
@@ -217,7 +228,7 @@ sub parse_rechnung ($) {
 			}
 
 			if(!defined($rechnung{datum})) {
-				error "Konnte aus der $file kein Datum extrahieren";
+				error "Konnte aus der $file kein Datum extrahieren (E)";
 			}
 		}
 	} else {
@@ -234,7 +245,7 @@ sub parse_rechnung ($) {
 	}
 
 	if (@missing) {
-		error "Missing values for $file: ".join(", ", @missing);
+		error "Missing values for ".($file =~ s#.*/##gr).": ".join(", ", @missing);
 	}
 
 	return \%rechnung;
@@ -247,7 +258,9 @@ sub main {
 
 	my @rechnungen = ();
 	while (my $file = <$config{path}/*.pdf>) {
-		push @rechnungen, parse_rechnung $file;
+		if($file =~ m#2022-03-17_Internet_Telefon_Rechnung#) {
+			push @rechnungen, parse_rechnung $file;
+		}
 	}
 
 	my @keys = qw/filename firma datum summe mwst_satz/;
