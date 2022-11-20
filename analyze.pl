@@ -204,11 +204,8 @@ sub parse_rechnung ($) {
 			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe", $1;
 		} else { # Vodafone Kabel
 			$rechnung{firma} = "Vodafone-Kabel";
-			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz", $1;
-			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
-		
 			my $datum_re = qr#Datum:?\s*(\d+\.\s*\w+\s*\d+)#;
 
 			if($str =~ m#$datum_re#i) {
@@ -235,6 +232,9 @@ sub parse_rechnung ($) {
 			if(!defined($rechnung{datum})) {
 				error "Konnte aus der $file kein Datum extrahieren (E)";
 			}
+
+			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz", $1;
+			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
 		}
 	} else {
 		error "Invalid parser routine $parser_routine";
