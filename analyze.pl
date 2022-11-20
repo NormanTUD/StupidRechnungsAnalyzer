@@ -241,9 +241,10 @@ sub main {
 	my @keys = qw/filename firma datum summe mwst_satz/;
 
 	$\ = "\n";
-	print join(";", @keys);
+	my $seperator = ";";
+	print join($seperator, @keys);
 	foreach my $this_rechnung (@rechnungen) {
-		print join(";", map { /^\d+\.\d+$/ && s#\.#,#g; $_ } map { $_ = "" unless defined $_; $_ } map { $this_rechnung->{$_} } @keys);
+		print join($seperator, map { /^\d+\.\d+$/ && s#\.#,#g; $_ } map { $_ = "" unless defined $_; $_ } map { $this_rechnung->{$_} } @keys);
 	}
 }
 
