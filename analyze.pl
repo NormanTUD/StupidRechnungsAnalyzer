@@ -207,7 +207,6 @@ sub parse_rechnung ($) {
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
 		
-			use re 'debug';
 			my $datum_re = qr#Datum:?\s*(\d+\.\s*\w+\s*\d+)#;
 
 			if($str =~ m#$datum_re#i) {
