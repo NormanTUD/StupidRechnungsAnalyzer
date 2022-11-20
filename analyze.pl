@@ -143,9 +143,7 @@ sub parse_rechnung ($) {
 	my $string_without_newlines = $str;
 	$string_without_newlines =~ s#\R# #g;
 
-	if(!defined($parser_routine)) {
-		error "Cannot parse $file because no parser routine could be found";
-	}
+
 
 	my %rechnung = (
 		filename => $file =~ s#.*/##gr,
@@ -154,6 +152,11 @@ sub parse_rechnung ($) {
 		summe => undef,
 		mwst_satz => undef
 	);
+
+	if(!defined($parser_routine)) {
+		error "Cannot parse $file because no parser routine could be found";
+		return \%rechnung;
+	}
 
 	if(!$parser_routine) {
 		error "Cannot find parser routine for $file";
