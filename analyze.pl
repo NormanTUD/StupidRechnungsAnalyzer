@@ -21,7 +21,8 @@ my @monate = qw/januar februar märz april mai juni juli august september oktobe
 my %config = (
 	debug => 0,
 	die_on_error => 0,
-	seperator => ";"
+	seperator => ";",
+	path => "."
 );
 
 # https://stackoverflow.com/questions/35800966/checking-whether-a-program-exists
@@ -67,6 +68,7 @@ Rechnungsanalysierer für Jörg
 
 Parameter:
 --seperator=;					What the CSV should be seperated by
+--path=/absolute/or/relative/path		Path where PDFs lie
 --debug						Aktiviert Debug-Outputs
 --die_on_error					Stirbt bei jedem Fehler sofort
 --help						Diese Hilfe
@@ -84,10 +86,16 @@ sub analyze_args {
 			$config{die_on_error} = 1;
 		} elsif (/^--seperator=(.*)$/) {
 			$config{seperator} = $1;
+		} elsif (/^--path=(.*)$/) {
+			$config{path} = $1;
 		} else {
 			warn "Unknown parameter: $_\n";
 			_help 1;
 		}
+	}
+
+	if(!-d $config{path}) {
+		die "--path=$config{path} does not exist.";
 	}
 }
 
@@ -238,7 +246,7 @@ sub main {
 	check_installed_software;
 
 	my @rechnungen = ();
-	while (my $file = <*.pdf>) {
+	while (my $file = <$config{path}/*.pdf>) {
 		push @rechnungen, parse_rechnung $file;
 	}
 
