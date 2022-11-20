@@ -131,7 +131,6 @@ sub parse_rechnung ($) {
 	my $str = join("\n", @contents);
 
 	my $encoding_name = Encode::Detect::Detector::detect($str);
-	print $encoding_name; # gb18030
 
 	$str = decode($encoding_name, $str);
 
@@ -257,9 +256,7 @@ sub main {
 
 	my @rechnungen = ();
 	while (my $file = <$config{path}/*.pdf>) {
-		if($file =~ m#2022-03-17_Internet_Telefon_Rechnung#) {
-			push @rechnungen, parse_rechnung $file;
-		}
+		push @rechnungen, parse_rechnung $file;
 	}
 
 	my @keys = qw/filename firma datum summe mwst_satz/;
