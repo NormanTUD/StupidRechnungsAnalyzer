@@ -172,8 +172,7 @@ sub parse_rechnung ($) {
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
 		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
 	} elsif ($parser_routine eq "Vodafone") {
-		$rechnung{firma} = $parser_routine;
-		if($string_without_newlines !~ m#^\s*Vodafone#) { # Vodafone Format 1
+		if($string_without_newlines !~ m#^\s*Vodafone#) { # Vodafone Mobil
 			$rechnung{firma} = "Vodafone-Mobil";
 			if($str =~ m#den Zeitraum\s*vom\s*(\d+\.\d+.\d+)\s*bis\s*(\d+\.\d+.\d+)#) {
 				$rechnung{datum} = $2;				# Hier 1 wählen, wenn das Startdatum des Vertrages gewählt werden soll
@@ -183,7 +182,7 @@ sub parse_rechnung ($) {
 
 			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
 			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe", $1;
-		} else { # Vodafone Format 2
+		} else { # Vodafone Kabel
 			$rechnung{firma} = "Vodafone-Kabel";
 			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz", $1;
 			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
