@@ -5,6 +5,7 @@ use warnings;
 use autodie;
 use Data::Dumper;
 use List::MoreUtils qw(firstidx);
+use Term::ANSIColor;
 
 sub debug (@);
 
@@ -32,9 +33,9 @@ sub check_exists_command {
 sub error ($) {
 	my $arg = shift;
 	if($config{die_on_error}) {
-		die $arg;
+		die color("red").$arg.color("reset");
 	} else {
-		warn "$arg\n";
+		warn color("red").$arg.color("reset")."\n";
 	}
 }
 
