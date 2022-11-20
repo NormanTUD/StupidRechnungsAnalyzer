@@ -44,7 +44,7 @@ sub error ($) {
 	}
 }
 
-sub get_nr ($$\%$$) {
+sub get_nr ($$\%$) {
 	my ($str, $re, $rechnung, $name) = @_;
 
 	if($str =~ m#$re#i) {
@@ -108,6 +108,17 @@ sub check_installed_software () {
 	check_exists_command 'pdftotext' or die "$0 requires pdftotext";
 }
 
+sub get_simple_datum {
+	my $file = shift;
+	my $str = shift;
+
+	if($str =~ m#Datum:?\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
+		return join(".", $+{tag}, $+{monat}, $+{jahr});
+	} else {
+		error "Konnte aus der $file kein Datum extrahieren (A)";
+	}
+}
+
 sub pdftotext ($) {
 	my $fn = shift;
 	my $command = "pdftotext -layout $fn -";
@@ -158,30 +169,23 @@ sub parse_rechnung ($) {
 		return \%rechnung;
 	}
 
+	$rechnung{firma} = $parser_routine;
 	if(!$parser_routine) {
 		error "Cannot find parser routine for $file";
 	} elsif($parser_routine eq "WebServ") {
-		$rechnung{firma} = $parser_routine;
-		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
-			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
-		} else {
-			error "Konnte aus der $file kein Datum extrahieren (A)";
-		}
-
-		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
-		get_nr $str, qr#Gesamtbetrag\s*(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
+		$rechnung{datum} = get_simple_datum($file, $str);
+		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz";
+		get_nr $str, qr#Gesamtbetrag\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Variomedia") {
-		$rechnung{firma} = $parser_routine;
-		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
+		if($str =~ m#Datum:?\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
 		} else {
 			error "Konnte aus der $file kein Datum extrahieren (B)";
 		}
 
-		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz", $1;
-		get_nr $str, qr#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
+		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz";
+		get_nr $str, qr#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Telekom") {
-		$rechnung{firma} = $parser_routine;
 
 		if($str =~ m#Datum\s*(\d+\.\d+\.\d+)#) {
 			$rechnung{datum} = $1;
@@ -189,8 +193,8 @@ sub parse_rechnung ($) {
 			error "Konnte aus der $file kein Datum extrahieren (C)";
 		}
 
-		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
-		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
+		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe";
+		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz";
 	} elsif ($parser_routine eq "Vodafone") {
 		if($string_without_newlines !~ m#^\s*Vodafone#) { # Vodafone Mobil
 			$rechnung{firma} = "Vodafone-Mobil";
@@ -200,8 +204,8 @@ sub parse_rechnung ($) {
 				error "Konnte aus der $file kein Datum extrahieren (D)";
 			}
 
-			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
-			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe", $1;
+			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz";
+			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe";
 		} else { # Vodafone Kabel
 			$rechnung{firma} = "Vodafone-Kabel";
 
@@ -233,8 +237,8 @@ sub parse_rechnung ($) {
 				error "Konnte aus der $file kein Datum extrahieren (E)";
 			}
 
-			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz", $1;
-			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
+			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz";
+			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe";
 		}
 	} else {
 		error "Invalid parser routine $parser_routine";
