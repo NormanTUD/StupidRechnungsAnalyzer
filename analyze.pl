@@ -121,7 +121,7 @@ sub parse_rechnung ($) {
 	$string_without_newlines =~ s#\R# #g;
 
 	if(!defined($parser_routine)) {
-		error "Cannot parse $file because no parser routine could be found\n";
+		error "Cannot parse $file because no parser routine could be found";
 	}
 
 	my %rechnung = (
@@ -255,10 +255,15 @@ sub parse_rechnung ($) {
 
 	debug Dumper \%rechnung;
 
+	my @missing = ();
 	foreach (keys %rechnung) {
 		if(!defined($rechnung{$_})) {
-			error "Could not get $_ from $file";
+			push @missing, $_;
 		}
+	}
+
+	if (@missing) {
+		error "Missing values for $file: ".join(", ", @missing);
 	}
 
 	return \%rechnung;
