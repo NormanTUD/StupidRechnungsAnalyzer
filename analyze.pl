@@ -39,13 +39,19 @@ sub error ($) {
 	}
 }
 
-sub get_nr (\%$$) {
+sub get_nr ($$\%$$) {
+	my $str = shift;
+	my $re = shift;
 	my $rechnung = shift;
 	my $name = shift;
-	my $val = shift;
-	$val =~ s#,#.#g;
-	$val += 0;
-	$rechnung->{$name} = sprintf "%.2f", $val;
+	if($str =~ m#$re#i) {
+		my $val = $1;
+		$val =~ s#,#.#g;
+		$val += 0;
+		$rechnung->{$name} = sprintf "%.2f", $val;
+	} else {
+		error "Konnte keine $name ermitteln";
+	}
 }
 
 sub debug (@) {
@@ -142,17 +148,8 @@ sub parse_rechnung ($) {
 			error "Konnte aus der $file kein Datum extrahieren";
 		}
 
-		if($str =~ m#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#i) {
-			get_nr %rechnung, "mwst_satz", $1;
-		} else {
-			error "Konnte aus der $file keinen MwSt-Satz erkennen";
-		}
-
-		if($str =~ m#Gesamtbetrag\s*(\d+(?:,\d+)?)#i) {
-			get_nr %rechnung, "summe", $1;
-		} else {
-			error "Konnte aus der $file keinen Gesamtbetrag ermitteln";
-		}
+		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
+		get_nr $str, qr#Gesamtbetrag\s*(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
 	} elsif ($parser_routine eq "Variomedia") {
 		$rechnung{firma} = $parser_routine;
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
@@ -161,17 +158,8 @@ sub parse_rechnung ($) {
 			error "Konnte aus der $file kein Datum extrahieren";
 		}
 
-		if($str =~ m#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#i) {
-			get_nr %rechnung, "mwst_satz", $1;
-		} else {
-			error "Konnte aus der $file keinen MwSt-Satz erkennen";
-		}
-
-		if($str =~ m#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#i) {
-			get_nr %rechnung, "summe", $1;
-		} else {
-			error "Konnte aus der $file keinen Gesamtbetrag ermitteln";
-		}
+		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz", $1;
+		get_nr $str, qr#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
 	} elsif ($parser_routine eq "Telekom") {
 		$rechnung{firma} = $parser_routine;
 
@@ -181,18 +169,8 @@ sub parse_rechnung ($) {
 			error "Konnte kein Datum finden in der Datei $file";
 		}
 
-		if($str =~ m#Rechnungsbetrag\s+(\d+(?:,\d+)?)#) {
-			get_nr %rechnung, "summe", $1;
-		} else {
-			error "Konnte keine summe finden in $file";
-		}
-
-		if($str =~ m#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#) {
-			get_nr %rechnung, "mwst_satz", $1;
-		} else {
-			error "Konnte keine mwst ermitteln";
-		}
-
+		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
+		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
 	} elsif ($parser_routine eq "Vodafone") {
 		$rechnung{firma} = $parser_routine;
 		if($string_without_newlines !~ m#^\s*Vodafone#) { # Vodafone Format 1
@@ -203,31 +181,12 @@ sub parse_rechnung ($) {
 				error "Konnte aus der $file kein Datum ermitteln";
 			}
 
-			if($str =~ m#(\d+(?:,\d+)?)\s*%#) {
-				get_nr %rechnung, "mwst_satz", $1;
-			} else {
-				error "Konnte aus der $file kein mwst_satz ermitteln";
-			}
-
-
-			if($string_without_newlines =~ m#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#) {
-				get_nr %rechnung, "summe", $1;
-			} else {
-				error "Konnte keinen Gesamtbetrag bestimmen";
-			}
+			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
+			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe", $1;
 		} else { # Vodafone Format 2
 			$rechnung{firma} = "Vodafone-Kabel";
-			if($str =~ m#MwSt\.\s*\((\d+(?:,\d+)?)%#) {
-				get_nr %rechnung, "mwst_satz", $1;
-			} else {
-				error "Konnte aus $file keine MwSt ermitteln";
-			}
-
-			if($str =~ m#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#) {
-				get_nr %rechnung, "summe", $1;
-			} else {
-				error "Konnte in $file keine summe finden";
-			}
+			get_nr $str, qr#MwSt\.\s*\((\d+(?:,\d+)?)%#, %rechnung, "mwst_satz", $1;
+			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
 			my $datum_re = "Datum:?\\s*(\\d+\.\\s*\\w+\\s*\\d+)";
