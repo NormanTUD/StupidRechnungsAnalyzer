@@ -168,7 +168,7 @@ sub parse_rechnung ($) {
 		if($str =~ m#Datum\s*(\d+\.\d+\.\d+)#) {
 			$rechnung{datum} = $1;
 		} else {
-			error "Konnte kein Datum finden in der Datei $file";
+			error "Konnte aus der $file kein Datum extrahieren";
 		}
 
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe", $1;
@@ -179,7 +179,7 @@ sub parse_rechnung ($) {
 			if($str =~ m#den Zeitraum\s*vom\s*(\d+\.\d+.\d+)\s*bis\s*(\d+\.\d+.\d+)#) {
 				$rechnung{datum} = $2;				# Hier 1 wählen, wenn das Startdatum des Vertrages gewählt werden soll
 			} else {
-				error "Konnte aus der $file kein Datum ermitteln";
+				error "Konnte aus der $file kein Datum extrahieren";
 			}
 
 			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz", $1;
@@ -202,14 +202,14 @@ sub parse_rechnung ($) {
 					$monat = firstidx { $_ =~ /$monat_name/ } @monate;
 					$monat++;
 				} else {
-					error "Monat name could not be found in $file";
+					error "Konnte aus der $file keinen Monat extrahieren";
 				}
 
 				$rechnung{datum} = "$tag.$monat.$jahr";
 			}
 
 			if(!defined($rechnung{datum})) {
-				error "Konnte in $file kein datum finden";
+				error "Konnte aus der $file kein Datum extrahieren";
 			}
 		}
 	} else {
