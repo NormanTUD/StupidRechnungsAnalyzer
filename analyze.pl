@@ -111,7 +111,7 @@ sub parse_rechnung ($) {
 	$string_without_newlines =~ s#\R# #g;
 
 	if(!defined($parser_routine)) {
-		die "Cannot parse $file because no parser routine could be found\n";
+		error "Cannot parse $file because no parser routine could be found\n";
 	}
 
 	my %rechnung = (
@@ -122,7 +122,9 @@ sub parse_rechnung ($) {
 		mwst_satz => undef
 	);
 
-	if($parser_routine eq "WebServ") {
+	if(!$parser_routine) {
+		error "Cannot find parser routine for $file";
+	} elsif($parser_routine eq "WebServ") {
 		$rechnung{firma} = $parser_routine;
 		if($str =~ m#Datum:\s+(?<tag>\d+)\s*\.\s*(?<monat>\d+)\s*\.\s*(?<jahr>\d{4})#i) {
 			$rechnung{datum} = join(".", $+{tag}, $+{monat}, $+{jahr});
@@ -268,7 +270,7 @@ sub parse_rechnung ($) {
 			}
 		}
 	} else {
-		die "Invalid parser routine $parser_routine";
+		error "Invalid parser routine $parser_routine";
 	}
 
 	debug Dumper \%rechnung;
@@ -295,9 +297,9 @@ sub main {
 	my @keys = qw/filename firma datum summe mwst_satz/;
 
 	$\ = "\n";
-	print join(",", @keys);
+	print join(";", @keys);
 	foreach my $this_rechnung (@rechnungen) {
-		print join(",", map { $this_rechnung->{$_} } @keys);
+		print join(";", map { /^\d+\.\d+$/ && s#\.#,#g; $_ } map { $_ = "" unless defined $_; $_ } map { $this_rechnung->{$_} } @keys);
 	}
 }
 
