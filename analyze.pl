@@ -188,7 +188,7 @@ sub parse_rechnung ($) {
 			get_nr $str, qr#Summe:\s*\d+,\d+\s*(\d+(?:,\d+))#, %rechnung, "summe", $1;
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
-			my $datum_re = "Datum:?\\s*(\\d+\.\\s*\\w+\\s*\\d+)";
+			my $datum_re = qr#Datum:?\s*(\d+\.\s*\w+\s*\d+)#;
 			if($str =~ m#$datum_re#i) {
 				my $res = lc $1;
 				my ($tag, $monat, $monat_name, $jahr) = (undef, undef, undef, undef);
@@ -205,6 +205,7 @@ sub parse_rechnung ($) {
 
 				$rechnung{datum} = "$tag.$monat.$jahr";
 			}
+
 			if(!defined($rechnung{datum})) {
 				error "Konnte in $file kein datum finden";
 			}
