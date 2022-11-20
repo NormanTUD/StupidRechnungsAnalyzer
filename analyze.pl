@@ -40,10 +40,8 @@ sub error ($) {
 }
 
 sub get_nr ($$\%$$) {
-	my $str = shift;
-	my $re = shift;
-	my $rechnung = shift;
-	my $name = shift;
+	my ($str, $re, $rechnung, $name) = @_;
+
 	if($str =~ m#$re#i) {
 		my $val = $1;
 		$val =~ s#,#.#g;
