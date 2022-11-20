@@ -46,7 +46,6 @@ sub get_nr (\%$$) {
 	$val =~ s#,#.#g;
 	$val += 0;
 	$rechnung->{$name} = sprintf "%.2f", $val;
-
 }
 
 sub debug (@) {
