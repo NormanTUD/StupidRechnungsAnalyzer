@@ -1,2 +1,5 @@
-# StupidRechnungsAnalyzer
-For some very specific types of Rechnungen, not well generalized!
+```command
+sudo apt-get install poppler-utils gcc make
+cpan -i List::MoreUtils;
+cpan -i Term::ANSIColor;
+```
