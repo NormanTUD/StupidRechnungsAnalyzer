@@ -20,7 +20,8 @@ my @monate = qw/januar februar märz april mai juni juli august september oktobe
 
 my %config = (
 	debug => 0,
-	die_on_error => 0
+	die_on_error => 0,
+	seperator => ";"
 );
 
 # https://stackoverflow.com/questions/35800966/checking-whether-a-program-exists
@@ -65,6 +66,7 @@ sub _help ($) {
 Rechnungsanalysierer für Jörg
 
 Parameter:
+--seperator=;					What the CSV should be seperated by
 --debug						Aktiviert Debug-Outputs
 --die_on_error					Stirbt bei jedem Fehler sofort
 --help						Diese Hilfe
@@ -80,6 +82,8 @@ sub analyze_args {
 			_help 0;
 		} elsif (/^--die_on_error$/) {
 			$config{die_on_error} = 1;
+		} elsif (/^--seperator=(.*)$/) {
+			$config{seperator} = $1;
 		} else {
 			warn "Unknown parameter: $_\n";
 			_help 1;
@@ -241,10 +245,9 @@ sub main {
 	my @keys = qw/filename firma datum summe mwst_satz/;
 
 	$\ = "\n";
-	my $seperator = ";";
-	print join($seperator, @keys);
+	print join($config{seperator}, @keys);
 	foreach my $this_rechnung (@rechnungen) {
-		print join($seperator, map { /^\d+\.\d+$/ && s#\.#,#g; $_ } map { $_ = "" unless defined $_; $_ } map { $this_rechnung->{$_} } @keys);
+		print join($config{seperator}, map { /^\d+\.\d+$/ && s#\.#,#g; $_ } map { $_ = "" unless defined $_; $_ } map { $this_rechnung->{$_} } @keys);
 	}
 }
 
