@@ -161,7 +161,8 @@ sub parse_rechnung ($) {
 		firma => undef,
 		datum => undef,
 		summe => undef,
-		mwst_satz => undef
+		mwst_satz => undef,
+		rechnungsnummer => undef
 	);
 
 	if(!defined($parser_routine)) {
@@ -174,14 +175,25 @@ sub parse_rechnung ($) {
 		error "Cannot find parser routine for $file";
 	} elsif($parser_routine eq "WebServ") {
 		$rechnung{datum} = get_simple_datum($file, $str);
+		if($string_without_newlines =~ m#Rechnung\s*Nr\.\s*(\d+)#) {
+			$rechnung{rechnungsnummer} = $1;
+		}
 		get_nr $str, qr#zzgl\.\s*(\d+(?:\,\d+)?)\s*%#, %rechnung, "mwst_satz";
 		get_nr $str, qr#Gesamtbetrag\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Variomedia") {
 		$rechnung{datum} = get_simple_datum($file, $str);
+		if($string_without_newlines =~ m#Belegnummer:\s*([\d-]+)\s+#) {
+			$rechnung{rechnungsnummer} = $1;
+		}
 		get_nr $str, qr#zzgl\.\s*MwSt\s*(\d+(?:,\d+)?)\s*%:#, %rechnung, "mwst_satz";
 		get_nr $str, qr#Endbetrag:\s*€\s*(\d+(?:,\d+)?)#, %rechnung, "summe";
 	} elsif ($parser_routine eq "Telekom") {
 		$rechnung{datum} = get_simple_datum($file, $str);
+
+		if($string_without_newlines =~ m#Rechnungsnummer:?\s*(\d+\s*?)\s#) {
+			$rechnung{rechnungsnummer} = $1;
+		}
+
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe";
 		get_nr $str, qr#Umsatzsteuer\s*(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz";
 	} elsif ($parser_routine eq "Vodafone") {
@@ -193,10 +205,17 @@ sub parse_rechnung ($) {
 				error "Konnte aus der $file kein Datum extrahieren (D)";
 			}
 
+			if($string_without_newlines =~ m#Rechnungsnummer\s*Kundennummer\s*Seite Ihre Vodafone-Rechnung\s*(\d+)#) {
+				$rechnung{rechnungsnummer} = $1;
+			}
 			get_nr $str, qr#(\d+(?:,\d+)?)\s*%#, %rechnung, "mwst_satz";
 			get_nr $string_without_newlines, qr#Zu\s*zahlender\s*Rechnungsbetrag\s*(\d+(?:,\d+)?)\s*€#, %rechnung, "summe";
 		} else { # Vodafone Kabel
 			$rechnung{firma} = "Vodafone-Kabel";
+
+			if($string_without_newlines =~ m#Rechnungsnummer:?\s*(\d+)#) {
+				$rechnung{rechnungsnummer} = $1;
+			}
 
 			# Son Blödsinn! Das Datum als Monat reinschreiben statt als Zahl >_<
 			my $datum_re = qr#Datum:?\s*(\d+\.\s*\w+\s*\d+)#;
@@ -259,7 +278,7 @@ sub main {
 		push @rechnungen, parse_rechnung $file;
 	}
 
-	my @keys = qw/filename firma datum summe mwst_satz/;
+	my @keys = qw/filename firma datum summe mwst_satz rechnungsnummer/;
 
 	$\ = "\n";
 	print join($config{seperator}, @keys);
