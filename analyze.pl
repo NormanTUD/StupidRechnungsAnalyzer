@@ -190,8 +190,9 @@ sub parse_rechnung ($) {
 	} elsif ($parser_routine eq "Telekom") {
 		$rechnung{datum} = get_simple_datum($file, $str);
 
-		if($string_without_newlines =~ m#Rechnungsnummer:?\s*(\d+\s*?)\s#) {
+		if($string_without_newlines =~ m#Rechnungsnummer:?\s*([\d\s*]+\s*?)\s*\w#) {
 			$rechnung{rechnungsnummer} = $1;
+			$rechnung{rechnungsnummer} =~ s#\s##g;
 		}
 
 		get_nr $str, qr#Rechnungsbetrag\s+(\d+(?:,\d+)?)#, %rechnung, "summe";
