@@ -279,7 +279,7 @@ sub main {
 		push @rechnungen, parse_rechnung $file;
 	}
 
-	my @keys = qw/filename firma datum summe mwst_satz rechnungsnummer/;
+	my @keys = qw/filename rechnungsnummer firma datum summe mwst_satz/;
 
 	$\ = "\n";
 	print join($config{seperator}, @keys);
